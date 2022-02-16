@@ -60,7 +60,6 @@ class GameFlags(Flag):
     TAB_TREASURES = auto()  # Maybe needs to be part of treasure page?
     BOSS_RANDO = auto()
     DUPLICATE_CHARS = auto()
-    DUPLICATE_TECHS = auto()
     VISIBLE_HEALTH = auto()
     FAST_TABS = auto()
     BUCKET_FRAGMENTS = auto()
@@ -160,7 +159,14 @@ class TabSettings:
     speed_min: int = 1
     speed_max: int = 1
 
-
+@dataclass
+class DCSettings:
+    char_choices: list = field(default_factory=lambda: [[i for i in range(7)] for j in range(7)])
+    duplicate_duals: bool = False
+    filter_toggle: bool = False
+    filter_min: int = 1
+    filter_max: int = 7
+    
 @dataclass
 class ROSettings:
     loc_list: list[ctenums.BossID] = field(default_factory=list)
@@ -240,7 +246,6 @@ class Settings:
         self.mystery_settings = MysterySettings()
 
         self.gameflags = GameFlags.FIX_GLITCH
-        self.char_choices = [[i for i in range(7)] for j in range(7)]
 
         BossID = ctenums.BossID
         boss_list = \
@@ -253,6 +258,8 @@ class Settings:
         loc_list = ctenums.LocID.get_boss_locations()
         # loc_list.remove(LocID.SUN_PALACE)
         # loc_list.remove(LocID.SUNKEN_DESERT_DEVOURER)
+
+        self.dc_settings = DCSettings()
 
         self.ro_settings = ROSettings(loc_list, boss_list, False, False)
         self.bucket_settings = BucketSettings(30, 20)
