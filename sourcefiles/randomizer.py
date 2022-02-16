@@ -1145,7 +1145,7 @@ def get_settings_from_command_line() -> rset.Settings:
             "Should duplicate characters learn dual techs? Y/N "
         ).upper()
         if same_char_techs == 'Y':
-            settings.gameflags |= rset.GameFlags.DUPLICATE_TECHS
+            settings.dc_settings.duplicate_duals = True
 
     tab_treasures = input("Do you want all treasures to be tabs(tb)? Y/N ")
     tab_treasures = tab_treasures.upper()
