@@ -17,7 +17,7 @@ from tkinter import messagebox
 import randomizer
 import bossdata
 from randosettings import Settings, GameFlags, Difficulty, ShopPrices, \
-    TechOrder, TabSettings, TabRandoScheme, ROSettings, CosmeticFlags, \
+    TechOrder, TabSettings, DCSettings, TabRandoScheme, ROSettings, CosmeticFlags, \
     BucketSettings, GameMode, MysterySettings
 from ctenums import LocID, BossID
 import ctrom
@@ -128,6 +128,9 @@ class RandoGUI:
                              for j in range(7)]
 
         self.duplicate_duals = tk.IntVar(value=0)
+        self.duplicate_filter_toggle = tk.IntVar(value=0)
+        self.duplicate_filter_min = tk.IntVar(value=0)
+        self.duplicate_filter_max = tk.IntVar(value=0)
 
         # ro settings
         self.preserve_part_count = tk.IntVar(value=0)
@@ -232,6 +235,18 @@ class RandoGUI:
 
         # This can only be called after all of the widgets are initialized
         self.load_settings_file()
+        
+    def set_high_given_low(low: int, high: tk.IntVar):
+        a = low
+        b = high.get()
+        if a > b:
+            high.set(a)
+
+    def set_low_given_high(low: tk.IntVar, high: int):
+        a = low.get()
+        b = high
+        if a > b:
+            low.set(b)
 
     def get_settings(self):
         return self.__settings
@@ -322,7 +337,7 @@ class RandoGUI:
         # Shop Prices
         self.settings.shopprices = \
             ShopPrices.inv_str_dict()[self.shop_prices.get()]
-            
+
         # Tech randomization
         self.settings.techorder = \
             TechOrder.inv_str_dict()[self.tech_order.get()]
@@ -355,12 +370,21 @@ class RandoGUI:
                 speed_max=self.speed_tab_max.get()
             )
 
-        # DC (dup duals already taken, just char choices)
+        # DC
+        self.settings.dc_settings = \
+            DCSettings(
+                    duplicate_duals=self.duplicate_duals.get(),
+                    filter_toggle=self.duplicate_filter_toggle.get(),
+                    filter_min=self.duplicate_filter_min.get(),
+                    filter_max=self.duplicate_filter_max.get()
+            )
+            
+        #populating self.settings.dc_settings.char_choices
         for i in range(7):
-            self.settings.char_choices[i] = []
+            self.settings.dc_settings.char_choices[i] = []
             for j in range(7):
                 if self.char_choices[i][j].get() == 1:
-                    self.settings.char_choices[i].append(j)
+                    self.settings.dc_settings.char_choices[i].append(j)
 
         # RO Settings
         # print(self.bosses)
@@ -472,10 +496,16 @@ class RandoGUI:
         # DC char choices
         for i in range(7):
             for j in range(7):
-                if j in self.settings.char_choices[i]:
+                if j in self.settings.dc_settings.char_choices[i]:
                     self.char_choices[i][j].set(1)
                 else:
                     self.char_choices[i][j].set(0)
+                    
+        #DC additional options
+        self.duplicate_duals.set(self.settings.dc_settings.duplicate_duals)
+        self.duplicate_filter_toggle.set(self.settings.dc_settings.filter_toggle)
+        self.duplicate_filter_min.set(self.settings.dc_settings.filter_min)
+        self.duplicate_filter_max.set(self.settings.dc_settings.filter_max)
 
         # push the ro flag lists
         ro_settings = self.settings.ro_settings
@@ -770,6 +800,14 @@ class RandoGUI:
             for i in range(7):
                 for j in self.char_choices[i]:
                     j.set(val)
+                    
+        def set_vanilla():
+            for i in range(7):
+                for j in range(7):
+                    if i == j:
+                        self.char_choices[i][j].set(1)
+                    else:
+                        self.char_choices[i][j].set(0)
 
         dcframe = tk.Frame(
             parent, borderwidth=1, highlightbackground='black',
@@ -785,6 +823,10 @@ class RandoGUI:
         button = tk.Button(dcframe, text='Uncheck All',
                            command=lambda: set_all(0))
         button.grid(row=row, column=2, columnspan=2)
+        
+        button = tk.Button(dcframe, text='Chars As Themselves',
+                           command=lambda: set_vanilla())
+        button.grid(row=row, column=4, columnspan=2)
 
         dcframe.pack(fill=tk.X)
 
@@ -801,12 +843,59 @@ class RandoGUI:
 
         checkbutton = tk.Checkbutton(
             dcframe, text='Duplicate Duals',
-            variable=self.flag_dict[GameFlags.DUPLICATE_TECHS]
+            variable=self.duplicate_duals
         )
         checkbutton.grid(row=1, column=0)
         CreateToolTip(checkbutton,
-                      'Check this to enable dual techs betweeen copies of the '
+                      'Check this to enable dual techs between copies of the '
                       + 'same character (e.g. Ayla+Ayla beast toss).')
+        checkbutton = tk.Checkbutton(
+             dcframe, text='Filter Chars',
+             variable=self.duplicate_filter_toggle
+        )
+        checkbutton.grid(row=1, column=1)
+        CreateToolTip(checkbutton,
+                      'Check this to restrict party composition to a random\n'
+                      + 'number of characters, between the range specified.\n'
+                      + 'If a character slot is specified to have no characters\n'
+                      + 'within the set chosen at generation time, that slot will\n'
+                      + 'be replaced with one of the randomly-chosen characters.')
+                      
+        row = 1
+        min_val=self.duplicate_filter_min
+        max_val=self.duplicate_filter_max
+        
+        char_filter_choices = [x for x in range(1, 8)]
+
+        label = tk.Label(
+            dcframe,
+            text='Min:'
+        )
+        label.grid(row=row, column=2, sticky=tk.E)
+
+        min_dropdown = ttk.OptionMenu(
+            dcframe,
+            min_val,
+            1,  # Have to set a default for integer options
+            *char_filter_choices,
+            command=lambda x: RandoGUI.set_high_given_low(x, max_val)
+        )
+        min_dropdown.grid(row=row, column=3)
+
+        label = tk.Label(
+            dcframe,
+            text='Max:'
+        )
+        label.grid(row=row, column=4, sticky=tk.E)
+
+        max_dropdown = ttk.OptionMenu(
+            dcframe,
+            max_val,
+            1,  # Have to set a default for integer options
+            *char_filter_choices,
+            command=lambda x: RandoGUI.set_low_given_high(min_val, x)
+        )
+        max_dropdown.grid(row=row, column=5)
 
         return dcframe
 
@@ -1664,24 +1753,22 @@ class RandoGUI:
 
         return page
 
+    def set_high_given_low(low: int, high: tk.IntVar):
+        a = low
+        b = high.get()
+        if a > b:
+            high.set(a)
+
+    def set_low_given_high(low: tk.IntVar, high: int):
+        a = low.get()
+        b = high
+        if a > b:
+            low.set(b)
+
     def get_tab_magnigtude_frame(self, parent,
                                  tab_type: str,
                                  min_val: tk.IntVar,
                                  max_val: tk.IntVar):
-
-        def set_high_given_low(low: int, high: tk.IntVar):
-            a = low
-            b = high.get()
-
-            if a > b:
-                high.set(a)
-
-        def set_low_given_high(low: tk.IntVar, high: int):
-            a = low.get()
-            b = high
-
-            if a > b:
-                low.set(b)
 
         frame = tk.Frame(parent)
 
@@ -1700,7 +1787,7 @@ class RandoGUI:
             min_val,
             1,  # Have to set a default for integer options
             *tab_choices,
-            command=lambda x: set_high_given_low(x, max_val)
+            command=lambda x: RandoGUI.set_high_given_low(x, max_val)
         )
         min_dropdown.grid(row=row, column=1)
 
@@ -1715,7 +1802,7 @@ class RandoGUI:
             max_val,
             1,  # Have to set a default for integer options
             *tab_choices,
-            command=lambda x: set_low_given_high(min_val, x)
+            command=lambda x: RandoGUI.set_low_given_high(min_val, x)
         )
         max_dropdown.grid(row=row, column=4)
 
