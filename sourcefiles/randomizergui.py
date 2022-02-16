@@ -1753,18 +1753,6 @@ class RandoGUI:
 
         return page
 
-    def set_high_given_low(low: int, high: tk.IntVar):
-        a = low
-        b = high.get()
-        if a > b:
-            high.set(a)
-
-    def set_low_given_high(low: tk.IntVar, high: int):
-        a = low.get()
-        b = high
-        if a > b:
-            low.set(b)
-
     def get_tab_magnigtude_frame(self, parent,
                                  tab_type: str,
                                  min_val: tk.IntVar,
