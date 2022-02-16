@@ -63,8 +63,43 @@ def write_pcs_to_config(settings: rset.Settings, config: cfg.RandoConfig):
     # and tech level to use when reassigning
     if rset.GameFlags.DUPLICATE_CHARS in settings.gameflags:
         # Catch bad char_choices here?
-        choices = [CharID(random.choice(settings.char_choices[i]))
-                   for i in range(7)]
+
+        # Intended design: if filter_toggle is true, randomly select which characters can be assigned to the rom.
+        # if no user-selected choices are located in the pick list, that slot may be any choice in the pick list
+        # if there is at least one user-selected choice in the pick list, that slot will only allow user selection that also appear in the pick list
+        if settings.dc_settings.filter_toggle:
+            # not strictly necessary to assign objs to these, aids in refactoring
+            min = settings.dc_settings.filter_min
+            max = settings.dc_settings.filter_max
+            chars = settings.dc_settings.char_choices
+            num = random.randint(min,max)
+            
+            picks = [ i for i in range(7) ]
+            
+            random.shuffle(picks)
+            
+            picks = picks[0:num]
+            
+            filt = [[] for i in range(7)]
+                        
+            for i in range(7):
+                filt[i] = []
+                for j in range(len(chars[i])):
+                    if chars[i][j] in picks:
+                        filt[i].append(chars[i][j])
+
+                #if the filter doesn't allow for any of the chosen characters, allow random choice from picks
+                if filt[i] == []:
+                    filt[i] = picks
+                    
+        else:
+            filt = settings.dc_settings.char_choices
+        
+        
+        # this code does not take filter into account; it is entirely possible for a 
+        # character randomly chosen in filt to not appear in the seed. what do?
+        choices = [CharID(random.choice(filt[i]))
+                for i in range(7)]
 
         new_stats = [copy.deepcopy(char_man.pcs[choices[i]].stats)
                      for i in range(7)]
@@ -84,9 +119,12 @@ def write_pcs_to_config(settings: rset.Settings, config: cfg.RandoConfig):
             char_man.pcs[i].stats = new_stats[i]
             char_man.pcs[i].assigned_char = choices[i]
     else:
+        #is not DC
         choices = [i for i in range(7)]
 
-    dup_duals = rset.GameFlags.DUPLICATE_TECHS in settings.gameflags
+    dup_duals = settings.dc_settings.duplicate_duals
+    
+    #char_choices used here
     config.techdb = get_reassign_techdb(config.techdb,
                                         choices,
                                         dup_duals)
