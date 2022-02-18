@@ -904,6 +904,11 @@ class Randomizer:
         # using those is the need to update them with every patch.
         ctrom = CTRom(ct_vanilla, True)
         Randomizer.__apply_basic_patches(ctrom)
+
+        # Apply hard mode if it's in the settings.
+        if settings.enemy_difficulty == rset.Difficulty.HARD:
+            ctrom.rom_data.patch_ips_file('./patches/hard.ips')
+
         config = cfg.RandoConfig.get_config_from_rom(
             bytearray(ctrom.rom_data.getvalue())
         )
