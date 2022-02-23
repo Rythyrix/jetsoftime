@@ -24,7 +24,7 @@ def generate_mystery_settings(base_settings: rset.Settings) -> rset.Settings:
                         GF.FAST_PENDANT, GF.ZEAL_END,
                         GF.QUIET_MODE, GF.FIX_GLITCH,
                         GF.DUPLICATE_TECHS, GF.BUFF_XSTRIKE,
-                        GF.GUARANTEED_DROPS]
+                        GF.GUARANTEED_DROPS, GF.AYLA_REBALANCE]
 
     # Set the qol flags specified in base settings
     for x in qol_cosm_options:
@@ -71,8 +71,10 @@ def generate_mystery_settings(base_settings: rset.Settings) -> rset.Settings:
 
     ret_flags |= GF.MYSTERY
 
+    ret_settings.cosmetic_flags = base_settings.cosmetic_flags
     ret_settings.gameflags = ret_flags
     ret_settings.tab_settings = base_settings.tab_settings
     ret_settings.ro_settings = base_settings.ro_settings
+    ret_settings.char_choices = base_settings.char_choices
 
     return ret_settings

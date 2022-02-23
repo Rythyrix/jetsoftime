@@ -66,6 +66,7 @@ class GameFlags(Flag):
     GUARANTEED_DROPS = auto()
     BUFF_XSTRIKE = auto()
     MYSTERY = auto()
+    AYLA_REBALANCE = auto()
 
 
 # Dictionary for what flags force what other flags off.

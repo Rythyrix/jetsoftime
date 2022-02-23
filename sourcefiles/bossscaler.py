@@ -149,28 +149,39 @@ def set_boss_power(settings: rset.Settings, config: cfg.RandoConfig):
             if tid in [TID.SUN_PALACE_KEY, TID.ARRIS_DOME_KEY,
                        TID.GENO_DOME_KEY]:
                 # If you found an important item in the future:
-                #   1) Set prison boss (dtank) to rank-1
+                #   1) Set prison boss (dtank) to rank-1 if not already ranked
                 #   2) Set all future bosses to rank
                 # This only happens once, for the highest ranked item in the
                 # future.  Lower rank items found in the future will not
                 # decrease the rank of the future bosses.
-                important_keys.append(ItemID.PENDANT)
+                if ItemID.PENDANT not in important_keys:
+                    important_keys.append(ItemID.PENDANT)
                 # print(f"Adding {ItemID.PENDANT} to important keys")
                 prisonboss = boss_assign[LocID.PRISON_CATWALKS]
 
                 # Skip rank assignment if dtank already has a higher rank.
                 # This will happen if keys of multiple levels are in future.
-
                 if prisonboss not in boss_rank.keys() or (
                         prisonboss in boss_rank.keys() and
                         boss_rank[prisonboss] < rank
                 ):
-                    # print(f"Setting {prisonboss} to rank {rank - 1}")
                     boss_rank[prisonboss] = rank - 1
-                    gated_locs = [LocID.SUN_PALACE,
-                                  LocID.GENO_DOME_MAINFRAME,
-                                  LocID.ARRIS_DOME_GUARDIAN_CHAMBER]
-                    for loc in gated_locs:
+
+                # There is a bug in previous implementations where the future
+                # bosses were also only ranked if dtank was not already ranked.
+                # In the case that Melchior's item changes dtank's rank, the
+                # future bosses would never be ranked.
+
+                # The original intention was to rank the future bosses based on
+                # the highest ranked item there.  We'll preserve this.
+
+                # All future bosses have the same rank, so just pick Arris.
+                arrisboss = boss_assign[LocID.ARRIS_DOME_GUARDIAN_CHAMBER]
+                if arrisboss not in boss_rank or boss_rank[arrisboss] < rank:
+                    future_locs = [LocID.SUN_PALACE,
+                                   LocID.GENO_DOME_MAINFRAME,
+                                   LocID.ARRIS_DOME_GUARDIAN_CHAMBER]
+                    for loc in future_locs:
                         futureboss = boss_assign[loc]
                         # print(f"Setting {futureboss} to rank {rank}")
                         boss_rank[futureboss] = rank
@@ -180,10 +191,18 @@ def set_boss_power(settings: rset.Settings, config: cfg.RandoConfig):
                 #  2) king's trial boss gets set to rank
                 #  3) prison boss (dtank) gets set to rank-1
                 # This is subtle:  Dtank's rank can not be decreased by future
-                # items of lower rank, but it will be reduced by Melchior
-                # having a lower rank item.
+                # locations holding items of lower rank, but it will be reduced
+                # by Melchior having a lower rank item.
+                for item in (ItemID.GATE_KEY, ItemID.PENDANT):
+                    if item not in important_keys:
+                        important_keys.append(item)
 
-                boss = boss_assign[LocID.KINGS_TRIAL_NEW]
+                trialboss = boss_assign[LocID.KINGS_TRIAL_NEW]
+                boss_rank[trialboss] = rank
+
+                prisonboss = boss_assign[LocID.PRISON_CATWALKS]
+                boss_rank[prisonboss] = rank-1
+
             else:
                 # Other TIDs are straightforward.  Add their prerequisite item
                 # to the important_keys pool if they have one.  Rank their

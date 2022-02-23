@@ -2084,6 +2084,20 @@ class RandoGUI:
             'Change X-Strike to use Spincut + Leapslash.'
         )
 
+        checkbox = tk.Checkbutton(
+            frame,
+            text='Ayla Rebalance',
+            variable=self.flag_dict[GameFlags.AYLA_REBALANCE]
+        )
+        checkbox.pack(anchor=tk.W)
+
+        CreateToolTip(
+            checkbox,
+            'Reduce triple kick from 50 to 43 power in combo techs to match '
+            'the single tech version.  Increase rock throw from 30 to 35 '
+            'power to match the ~15% boost given to triple kick.'
+        )
+
         '''
         CreateToolTip(
             self.ice_age_checkbox,
