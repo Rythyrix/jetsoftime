@@ -35,6 +35,8 @@ class ScriptTabTreasure(cfg.ScriptTreasure):
 
         # print(f"Num removed: {num_removed}")
         if num_removed % 2 != 0:
+            # This is not a reliable indicator.  The 'PartyFollow' command can
+            # also undo 'ExploreMode Off' as in the Magus Castle Dungeons.
             # print("Warning: Removed an odd number of exploremode commands")
             # input()
             pass
@@ -187,6 +189,13 @@ def fast_tab_pickup(ctrom: CTRom, settings: rset.Settings):
             function_id=0x01,
             item_num=0,
             held_item=ItemID.POWER_TAB
+        ),
+        TID.MAGUS_CASTLE_DUNGEONS_MAGIC_TAB: ScriptTabTreasure(
+            location=LocID.MAGUS_CASTLE_DUNGEONS,
+            object_id=0x08,
+            function_id=0x01,
+            item_num=0,
+            held_item=ItemID.MAGIC_TAB
         ),
         TID.MAGUS_CASTLE_FLEA_MAGIC_TAB: ScriptTabTreasure(
             location=LocID.MAGUS_CASTLE_FLEA,

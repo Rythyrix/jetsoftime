@@ -946,6 +946,12 @@ class Randomizer:
             bytearray(ctrom.rom_data.getvalue())
         )
 
+        # Fix Falcon Hit to use Spincut as a prerequisite
+        techdb = config.techdb
+        falcon_hit = techdb.get_tech(ctenums.TechID.FALCON_HIT)
+        falcon_hit['lrn_req'][0] = int(ctenums.TechID.SPINCUT)
+        techdb.set_tech(falcon_hit, ctenums.TechID.FALCON_HIT)
+
         # Make X-Strike use Spincut+Leapslash
         if rset.GameFlags.BUFF_XSTRIKE in settings.gameflags:
             techdb = config.techdb

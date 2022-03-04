@@ -5,10 +5,9 @@ from byteops import get_value_from_bytes, to_little_endian
 # implementation.
 try:
     from ctcompress import compress
-    print('Using C compression implementation.')
+    # print('Using C compression implementation.')
 except ImportError:
-    print('C compression module not found.  Falling back to python.')
-
+    # print('C compression module not found.  Falling back to python.')
     def compress(source):
         return compress_py(source)
 
