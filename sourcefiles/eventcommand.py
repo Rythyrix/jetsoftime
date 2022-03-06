@@ -89,6 +89,16 @@ class EventCommand:
 
         return x
 
+    def set_explore_mode(is_on: bool):
+        ret_cmd = event_commands[0xE3].copy()
+        ret_cmd.args = [0]
+        if is_on:
+            ret_cmd.args[0] = 1
+        else:
+            ret_cmd.args[0] = 0
+
+        return ret_cmd
+
     def move_party(pc1_x, pc1_y, pc2_x, pc2_y, pc3_x, pc3_y):
         ret_cmd = event_commands[0xD9].copy()
         ret_cmd.args = [pc1_x, pc1_y, pc2_x, pc2_y, pc3_x, pc3_y]

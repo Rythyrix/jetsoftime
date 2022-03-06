@@ -306,6 +306,24 @@ class Randomizer:
         else:
             print('failed to find mm flag')
 
+    def __try_supervisors_office_recruit_fix(self):
+        '''
+        Removes a premature ExploreMode On to prevent losing a recruit.
+        '''
+        loc_id = ctenums.LocID.PRISON_SUPERVISORS_OFFICE
+        script = self.out_rom.script_manager.get_script(loc_id)
+
+        EC = ctevent.EC
+
+        obj_id, func_id = 0x06, 0x03
+
+        func = script.get_function(obj_id, func_id)
+        removed_cmd = EC.set_explore_mode(True)
+        ind = func.find_exact_command(removed_cmd)
+        func.delete_at_index(ind)
+
+        script.set_function(obj_id, func_id, func)
+
     def __try_mystic_mtn_portal_fix(self):
         '''
         Removes touch == activate from dactyl portal.  Maybe this fixes?
@@ -513,6 +531,9 @@ class Randomizer:
         # Two potential softlocks caused by (presumably) touch == activate.
         self.__try_proto_dome_fix()
         self.__try_mystic_mtn_portal_fix()
+
+        # Potential recruit loss when characters rescue in prison
+        self.__try_supervisors_office_recruit_fix()
 
         # Enable NG+ by defeating Lavos without doing Omen.
         self.__lavos_ngplus()

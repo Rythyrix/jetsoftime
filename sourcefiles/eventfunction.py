@@ -77,8 +77,15 @@ class EventFunction:
             else:
                 orig_to_pos = -1
 
+            # Putting a comment here because it was wrong for a while.
+            # If the from_pos is in [before, after), delete the jump.
+            # But if the to_pos==before, don't delete it.  That jump is fine.
+            # If we're inserting commands, it will point to the inserted block.
+            # If we're deleting commands, it will point to the first command
+            # after the deleted block.
             if before_pos <= orig_from_pos < after_pos or \
-               before_pos <= orig_to_pos < after_pos:
+               before_pos < orig_to_pos < after_pos:
+
                 del_inds.append(ind)
             else:
                 if orig_from_pos >= after_pos and jump.from_label[0] == '[':
@@ -91,8 +98,8 @@ class EventFunction:
 
             # print(jump)
 
-        for ind in del_inds:
-            self.jumps.delete(ind)
+        for ind in sorted(del_inds, reverse=True):
+            del(self.jumps[ind])
 
     def __shift_labels(self,
                        before_pos: int,
