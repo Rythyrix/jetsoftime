@@ -63,42 +63,19 @@ def write_pcs_to_config(settings: rset.Settings, config: cfg.RandoConfig):
     # and tech level to use when reassigning
     if rset.GameFlags.DUPLICATE_CHARS in settings.gameflags:
         # Catch bad char_choices here?
-
-        # Intended design: if filter_toggle is true, randomly select which characters can be assigned to the rom.
-        # if no user-selected choices are located in the pick list, that slot may be any choice in the pick list
-        # if there is at least one user-selected choice in the pick list, that slot will only allow user selection that also appear in the pick list
         if settings.dc_settings.filter_toggle:
-            # not strictly necessary to assign objs to these, aids in refactoring
+            # not strictly necessary to assign labels to these, aids in refactoring
             min = settings.dc_settings.filter_min
             max = settings.dc_settings.filter_max
-            chars = settings.dc_settings.char_choices
-            num = random.randint(min,max)
+            tol = settings.dc_settings.filter_tol
+            char_choices = settings.dc_settings.char_choices
+           
+            char_choices = filter_char_choices(char_choices, min, max, tol)
             
-            picks = [ i for i in range(7) ]
-            
-            random.shuffle(picks)
-            
-            picks = picks[0:num]
-            
-            filt = [[] for i in range(7)]
-                        
-            for i in range(7):
-                filt[i] = []
-                for j in range(len(chars[i])):
-                    if chars[i][j] in picks:
-                        filt[i].append(chars[i][j])
-
-                #if the filter doesn't allow for any of the chosen characters, allow random choice from picks
-                if filt[i] == []:
-                    filt[i] = picks
-                    
         else:
-            filt = settings.dc_settings.char_choices
-        
-        
-        # this code does not take filter into account; it is entirely possible for a 
-        # character randomly chosen in filt to not appear in the seed. what do?
-        choices = [CharID(random.choice(filt[i]))
+            char_choices = settings.dc_settings.char_choices
+
+        choices = [CharID(random.choice(char_choices[i]))
                 for i in range(7)]
 
         new_stats = [copy.deepcopy(char_man.pcs[choices[i]].stats)
@@ -129,6 +106,89 @@ def write_pcs_to_config(settings: rset.Settings, config: cfg.RandoConfig):
                                         choices,
                                         dup_duals)
 
+def filter_char_choices(char_choices: list, min: int, max: int, tolerance: int = 0):
+
+    order = [i for i in range(7)]
+    random.shuffle(order)
+    
+    filt = [[] for i in range(7)]
+    ret = [[] for i in range(7)]
+    worked , placed = [], []
+   
+    picks = [i for i in range(7)]
+    random.shuffle(picks)
+    picks = sorted(picks[:random.randint(min, max)])
+
+    '''
+    CRITERIA:
+        Minimum quantity one instance of each picked character guaranteed to appear in the seed.
+            Optionally allow fewer mandatory placements by passing tolerance.
+        Zero non-picked characters appear in the seed.
+        Minimum quantity one character per slot.
+        Minimize impact on player's selected choices.
+        Maximize variability of character selection, in accordance with the above
+
+    STRATEGY:
+        Filter data in char_choices into intermediate filt
+        If player specified a guaranteed instance of a character in picks, note it and skip that slot in later iterations.
+        Iterate over filt, looking for progressively-longer charslots to override.
+            Optionally, pass tolerance to allow fewer than len(picks) quantity charslots to be overridden.
+        If filt has remaining empty charslots, replace them charslot with picks.
+    '''
+
+    for i in range(7):
+        for c in char_choices[i]:
+            if c in picks:
+                filt[i].append(c)
+
+    for slot in order:
+        for c in list(set(picks) - set(placed)):
+            if filt[slot] == [c]:
+                placed.append(c)
+                worked.append(slot)
+                break
+        else:
+            continue
+
+    length = 0
+    flag = 0
+
+    while len(placed) < (len(picks) - tolerance):
+        for slot in order:
+
+            if (slot in worked) or (len(filt[slot]) > length):
+                continue
+
+            for i in list(set(picks) - set(placed)):
+                if (i in filt[slot]) or (flag):
+
+                    c = random.choice(list(set(picks) - set(placed)))
+
+                    placed.append(c)
+                    worked.append(slot)
+                    filt[slot] = [c]
+                    
+                    flag = False
+
+                    break
+            else:
+                continue
+            break
+        else:
+            if flag:
+                length += 1
+                flag = False
+            else:
+                flag = True
+
+        if length > 7:
+            raise Exception('DC filter slot override loop length > 7')
+
+    for i in range(7):
+        if filt[i] == []:
+                filt[i] = picks
+
+    return filt
 
 # TODO: Revisit this now that I've done a better job in ctstring.py
 def get_ct_name(string):
