@@ -131,6 +131,7 @@ class RandoGUI:
         self.duplicate_filter_toggle = tk.IntVar(value=0)
         self.duplicate_filter_min = tk.IntVar(value=0)
         self.duplicate_filter_max = tk.IntVar(value=0)
+        self.duplicate_filter_tol = tk.IntVar(value=0)
 
         # ro settings
         self.preserve_part_count = tk.IntVar(value=0)
@@ -376,7 +377,8 @@ class RandoGUI:
                     duplicate_duals=self.duplicate_duals.get(),
                     filter_toggle=self.duplicate_filter_toggle.get(),
                     filter_min=self.duplicate_filter_min.get(),
-                    filter_max=self.duplicate_filter_max.get()
+                    filter_max=self.duplicate_filter_max.get(),
+                    filter_tol=self.duplicate_filter_tol.get()
             )
             
         #populating self.settings.dc_settings.char_choices
@@ -506,6 +508,7 @@ class RandoGUI:
         self.duplicate_filter_toggle.set(self.settings.dc_settings.filter_toggle)
         self.duplicate_filter_min.set(self.settings.dc_settings.filter_min)
         self.duplicate_filter_max.set(self.settings.dc_settings.filter_max)
+        self.duplicate_filter_tol.set(self.settings.dc_settings.filter_tol)
 
         # push the ro flag lists
         ro_settings = self.settings.ro_settings
@@ -849,11 +852,12 @@ class RandoGUI:
         CreateToolTip(checkbutton,
                       'Check this to enable dual techs between copies of the '
                       + 'same character (e.g. Ayla+Ayla beast toss).')
+        
         checkbutton = tk.Checkbutton(
              dcframe, text='Filter Chars',
              variable=self.duplicate_filter_toggle
         )
-        checkbutton.grid(row=1, column=1)
+        checkbutton.grid(row=2, column=0, sticky='w')
         CreateToolTip(checkbutton,
                       'Check this to restrict party composition to a random\n'
                       + 'number of characters, between the range specified.\n'
@@ -861,22 +865,25 @@ class RandoGUI:
                       + 'within the set chosen at generation time, that slot will\n'
                       + 'be replaced with one of the randomly-chosen characters.')
                       
-        row = 1
+
+        row = 2
         min_val=self.duplicate_filter_min
         max_val=self.duplicate_filter_max
+        tol_val=self.duplicate_filter_tol
         
         char_filter_choices = [x for x in range(1, 8)]
+        char_filter_tolerance = [i for i in range(0,8)]
 
         label = tk.Label(
             dcframe,
             text='Min:'
         )
-        label.grid(row=row, column=2, sticky=tk.E)
+        label.grid(row=row, column=1, sticky=tk.E)
 
         min_dropdown = ttk.OptionMenu(
             dcframe,
             min_val,
-            1,  # Have to set a default for integer options
+            1,
             *char_filter_choices,
             command=lambda x: RandoGUI.set_high_given_low(x, max_val)
         )
@@ -891,12 +898,29 @@ class RandoGUI:
         max_dropdown = ttk.OptionMenu(
             dcframe,
             max_val,
-            1,  # Have to set a default for integer options
+            1,
             *char_filter_choices,
             command=lambda x: RandoGUI.set_low_given_high(min_val, x)
         )
         max_dropdown.grid(row=row, column=5)
-
+        
+        label = tk.Label(
+            dcframe,
+            text='Tol:'
+        )
+        label.grid(row=row, column=6, sticky=tk.E)
+        CreateToolTip(label,
+                      'Tolerance: Allow this many fewer randomly-chosen '
+                      + 'characters to be forced to appear in the seed.')
+        
+        max_dropdown = ttk.OptionMenu(
+            dcframe,
+            tol_val,
+            1,
+            *char_filter_tolerance
+        )
+        max_dropdown.grid(row=row, column=7)
+        
         return dcframe
 
     def display_dup_char_settings_window(self):
