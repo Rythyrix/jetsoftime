@@ -167,6 +167,7 @@ class DCSettings:
     filter_toggle: bool = False
     filter_min: int = 1
     filter_max: int = 7
+    filter_tol: int = 0
     
 @dataclass
 class ROSettings:
